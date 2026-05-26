@@ -1,7 +1,22 @@
 # -- Network --
 module "vpc" {
-  source    = "./vpc"
-  known_ips = ["<your-ip>"]
+  source = "./vpc"
+
+  name       = "k8s-vpc"
+  aws_region = var.aws_region
+  azs        = var.azs
+  cidr       = var.cidr
+
+  # Public Subnet
+  public_subnets                    = var.public_subnets
+  assign_public_ip_on_public_subnet = true
+  known_ips                         = var.known_ips
+
+  # Private Subnet
+  private_subnets = var.private_subnets
+
+  # Tags
+  tags = var.tags
 }
 
 # -- AMI --
@@ -24,7 +39,7 @@ data "aws_ami" "debian12" {
 # -- SSH Key --
 resource "aws_key_pair" "dev" {
   key_name   = "dev"
-  public_key = "<your-public-key>"
+  public_key = var.public_key
 }
 
 # -- EC2s --
@@ -41,28 +56,33 @@ module "jumpbox" {
   ami = data.aws_ami.debian12.id
 
   # Type/Size
-  instance_type                       = "t4g.nano"
+  instance_type = "t4g.nano"
   # create_spot_instance                = true
   # spot_instance_interruption_behavior = "terminate"
   # spot_type                           = "one-time"
 
   # Networking
-  create_eip             = true
+  create_eip             = false # the public subnet is configured to automatically map public ips to instances in it
   subnet_id              = module.vpc.public_subnets[0]
   vpc_security_group_ids = module.vpc.security_group_ids
+  private_ip             = local.private_ips.jumpbox
+  user_data = templatefile("./files/user_data.sh.tftpl", {
+    hostname   = "jumpbox"
+    hosts_file = local.hosts_file
+  })
 
   # Storage
   root_block_device = {
     delete_on_termination = true
-    size                  = 20
+    size                  = 10
   }
 
   # SSH
-  key_name   = aws_key_pair.dev.key_name
+  key_name = aws_key_pair.dev.key_name
 
   # Misc
   monitoring = false
-  tags = var.tags
+  tags       = var.tags
 }
 
 module "server" {
@@ -78,7 +98,7 @@ module "server" {
   ami = data.aws_ami.debian12.id
 
   # Type/Size
-  instance_type                       = "t4g.small"
+  instance_type = "t4g.small"
   # create_spot_instance                = true
   # spot_instance_interruption_behavior = "terminate"
   # spot_type                           = "one-time"
@@ -87,6 +107,11 @@ module "server" {
   create_eip             = false
   subnet_id              = module.vpc.private_subnets[0]
   vpc_security_group_ids = module.vpc.security_group_ids
+  private_ip             = local.private_ips.server
+  user_data = templatefile("./files/user_data.sh.tftpl", {
+    hostname   = "server"
+    hosts_file = local.hosts_file
+  })
 
   # Storage
   root_block_device = {
@@ -95,27 +120,27 @@ module "server" {
   }
 
   # SSH
-  key_name   = aws_key_pair.dev.key_name
+  key_name = aws_key_pair.dev.key_name
 
   # Misc
   monitoring = false
-  tags = var.tags
+  tags       = var.tags
 }
 
-module "node_0" {
+module "node0" {
   source = "terraform-aws-modules/ec2-instance/aws"
 
   # | Name    | Description            | CPU | RAM   | Storage |
   # |---------|------------------------|-----|-------|---------|
   # | node-0  | Kubernetes worker node | 1   | 2GB   | 20GB    |
 
-  name = "node_0"
+  name = "node0"
 
   # OS
   ami = data.aws_ami.debian12.id
 
   # Type/Size
-  instance_type                       = "t4g.small"
+  instance_type = "t4g.small"
   # create_spot_instance                = true
   # spot_instance_interruption_behavior = "terminate"
   # spot_type                           = "one-time"
@@ -124,35 +149,40 @@ module "node_0" {
   create_eip             = false
   subnet_id              = module.vpc.private_subnets[0]
   vpc_security_group_ids = module.vpc.security_group_ids
+  private_ip             = local.private_ips.node0
+  user_data = templatefile("./files/user_data.sh.tftpl", {
+    hostname   = "node0"
+    hosts_file = local.hosts_file
+  })
 
   # Storage
   root_block_device = {
     delete_on_termination = true
     size                  = 20
   }
-  
+
   # SSH
-  key_name   = aws_key_pair.dev.key_name
+  key_name = aws_key_pair.dev.key_name
 
   # Misc
   monitoring = false
-  tags = var.tags
+  tags       = var.tags
 }
 
-module "node_1" {
+module "node1" {
   source = "terraform-aws-modules/ec2-instance/aws"
 
   # | Name    | Description            | CPU | RAM   | Storage |
   # |---------|------------------------|-----|-------|---------|
   # | node-1  | Kubernetes worker node | 1   | 2GB   | 20GB    |
 
-  name = "node_1"
+  name = "node1"
 
   # OS
   ami = data.aws_ami.debian12.id
 
   # Type/Size
-  instance_type                       = "t4g.small"
+  instance_type = "t4g.small"
   # create_spot_instance                = true
   # spot_instance_interruption_behavior = "terminate"
   # spot_type                           = "one-time"
@@ -161,6 +191,11 @@ module "node_1" {
   create_eip             = false
   subnet_id              = module.vpc.private_subnets[0]
   vpc_security_group_ids = module.vpc.security_group_ids
+  private_ip             = local.private_ips.node1
+  user_data = templatefile("./files/user_data.sh.tftpl", {
+    hostname   = "node1"
+    hosts_file = local.hosts_file
+  })
 
   # Storage
   root_block_device = {
@@ -169,9 +204,9 @@ module "node_1" {
   }
 
   # SSH
-  key_name   = aws_key_pair.dev.key_name
+  key_name = aws_key_pair.dev.key_name
 
   # Misc
   monitoring = false
-  tags = var.tags
+  tags       = var.tags
 }

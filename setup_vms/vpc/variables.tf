@@ -1,32 +1,26 @@
 variable "aws_region" {
   description = "AWS region to deploy into."
   type        = string
-  default     = "ap-southeast-2"
 }
 
 variable "name" {
-  type    = string
-  default = "k8s-vpc"
+  type = string
 }
 
 variable "cidr" {
-  type    = string
-  default = "10.0.0.0/16"
+  type = string
 }
 
 variable "azs" {
-  type    = list(string)
-  default = ["ap-southeast-2a"]
+  type = list(string)
 }
 
 variable "private_subnets" {
-  type    = list(string)
-  default = ["10.0.1.0/24"]
+  type = list(string)
 }
 
 variable "public_subnets" {
-  type    = list(string)
-  default = ["10.0.101.0/24"]
+  type = list(string)
 }
 
 variable "known_ips" {
@@ -34,13 +28,12 @@ variable "known_ips" {
   type        = list(string)
 }
 
+variable "assign_public_ip_on_public_subnet" {
+  type        = bool
+  description = "Whether to automatically map a public ip to ec2 instances launched on the public subnet"
+}
+
 variable "tags" {
-  type = object({
-    Terraform = string
-    Project   = string
-  })
-  default = {
-    Terraform = "true"
-    Project   = "K8S-HardWay"
-  }
+  type = map(string)
+  default = {}
 }
