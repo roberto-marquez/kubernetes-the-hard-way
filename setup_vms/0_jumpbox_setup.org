@@ -1,5 +1,30 @@
+#+TITLE: Jumpbox Setup
+#+PROPERTY: header-args:bash  :results output
+#+PROPERTY: header-args:bash+ :dir /ssh:admin@<PUBLIC_JUMPBOX_IP>:/home/admin/ :session jumpbox
+#+PROPERTY: header-args:bash+ :session jumpbox
 
-* JUMPBOX SETUP
+* Switch to root
+#+begin_src bash 
+sudo su -l
+#+end_src
 
-** Install dependencies
-...
+* Install Command Line Utilities
+#+begin_src bash 
+apt-get update
+apt-get -y install wget curl vim openssl git
+#+end_src
+
+* Sync GitHub Repository
+#+begin_src bash
+git clone --depth 1 https://github.com/kelseyhightower/kubernetes-the-hard-way.git
+cd kubernetes-the-hard-way
+#+end_src
+
+* Download Binaries
+#+begin_src bash
+wget -q --show-progress \
+  --https-only \
+  --timestamping \
+  -P downloads \
+  -i downloads-$(dpkg --print-architecture).txt
+#+end_src
