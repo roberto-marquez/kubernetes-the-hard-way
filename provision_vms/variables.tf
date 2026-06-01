@@ -6,12 +6,12 @@ variable "aws_region" {
 
 variable "known_ips" {
   type    = list(string)
-  default = ["<your-public-ip>"]
+  default = ["119.18.1.85"]
 }
 
 variable "public_key" {
   type    = string
-  default = "<your-public-key>"
+  default = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFic4Ntm3UE9AK5ZMCZZfiGtwwS3h7lgQhG2PH6eZExz roberto.m.v.cloud@gmail.com"
 }
 
 variable "cidr" {
